@@ -46,6 +46,6 @@ jobs:
     - name: Clean workspace
       run: |
         echo "Cleaning workspace to free up disk space"
-        rm -rf node_modules | true
-        rm -rf dist | true
-        npm cache clean --force | true
+        rm -rf node_modules || true
+        rm -rf dist || true
+        npm cache clean --force || true
