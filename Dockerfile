@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm i -f
 COPY . .
-RUN npm run build --configuration prod
+RUN npm run build
 
 # Étape 2: Servir l'application avec NGINX
 FROM nginx:alpine
