@@ -29,7 +29,7 @@ jobs:
 
     - name: Install dependencies
       if: steps.npm-cache.outputs.cache-hit != 'true'
-      run: npm ci
+      run: npm ci --force
 
     - name: Run tests
       run: npm test -- --watch=false --browsers=ChromeHeadless --no-progress
