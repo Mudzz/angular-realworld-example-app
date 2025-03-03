@@ -32,7 +32,7 @@ jobs:
       run: npm i --force
 
     - name: Run tests
-      run: npm test -- --watch=false --browsers=ChromeHeadless --no-progress
+      run: npm test -- --watch=false --browsers=edge --no-progress
 
     - name: Build application
       run: npm run build -- --configuration production
@@ -46,6 +46,6 @@ jobs:
     - name: Clean workspace
       run: |
         echo "Cleaning workspace to free up disk space"
-        rm -rf node_modules || true
-        rm -rf dist || true
-        npm cache clean --force || true
+        rm -rf node_modules | true
+        rm -rf dist | true
+        npm cache clean --force | true
