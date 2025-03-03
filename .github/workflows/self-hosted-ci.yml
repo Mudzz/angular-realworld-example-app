@@ -29,17 +29,38 @@ jobs:
 
     - name: Install dependencies
       if: steps.npm-cache.outputs.cache-hit != 'true'
-      run: npm i --force
+      run: npm ci
 
     - name: Run tests
-      run: npm test -- --watch=false --browsers=edge --no-progress
+      run: npm test -- --watch=false --browsers=ChromeHeadless --no-progress
 
     - name: Build application
       run: npm run build -- --configuration production
 
-  cleanup:
+  docker-build:
     runs-on: self-hosted
     needs: build-and-test
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Build Docker image
+      run: docker build -t angular-app:${{ github.sha }} .
+
+    - name: Test Docker image
+      run: |
+        echo "Testing Docker image..."
+        docker run -d --name test-container -p 8080:80 angular-app:${{ github.sha }}
+        echo "Container started, waiting for it to initialize..."
+        sleep 10
+        curl -s http://localhost:8080 | grep -q "conduit" && echo "Application is running correctly" || echo "Failed to verify application"
+        docker stop test-container
+        docker rm test-container
+
+  cleanup:
+    runs-on: self-hosted
+    needs: [build-and-test, docker-build]
     if: always()
 
     steps:
@@ -49,3 +70,10 @@ jobs:
         rm -rf node_modules || true
         rm -rf dist || true
         npm cache clean --force || true
+
+    - name: Prune Docker images
+      run: |
+        echo "Keeping only recent Docker images"
+        docker image ls
+        # Conserver seulement les 3 images les plus récentes
+        docker image prune -a -f --filter "until=24h"
