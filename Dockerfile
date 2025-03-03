@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Optimisation des couches de cache
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm i --force
 
 # Copie du reste des fichiers
 COPY . .
