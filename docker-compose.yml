@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # Environnement de staging
+  app-staging:
+    image: angular-app:staging
+    container_name: app-staging
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  # Production Blue
+  app-blue:
+    image: angular-app:blue
+    container_name: app-blue
+    ports:
+      - "8081:80"
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  # Production Green
+  app-green:
+    image: angular-app:green
+    container_name: app-green
+    ports:
+      - "8082:80"
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  # Proxy NGINX pour Blue/Green
+  proxy:
+    image: nginx:alpine
+    container_name: proxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app-blue
+      - app-green
+    restart: unless-stopped
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

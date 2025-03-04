@@ -1,0 +1,62 @@
+name: Continuous Deployment
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup initial environment
+      run: |
+        # Préparation des fichiers de configuration s'ils n'existent pas
+        if [ ! -f "nginx.conf" ]; then
+          echo "Creating initial NGINX configuration..."
+          echo "upstream backend { server app-blue:80; # server app-green:80; }" > nginx.conf
+          echo "server { listen 80; location / { proxy_pass http://backend; proxy_set_header Host \$host; proxy_set_header X-Real-IP \$remote_addr; } }" >> nginx.conf
+        fi
+
+    - name: Build and tag images
+      run: |
+        echo "Building Docker image..."
+        docker build -t angular-app:staging .
+        docker tag angular-app:staging angular-app:blue
+        docker tag angular-app:staging angular-app:green
+
+  deploy-staging:
+    needs: build
+    runs-on: self-hosted
+    environment: staging
+
+    steps:
+    - name: Deploy to staging
+      run: |
+        echo "Deploying to staging environment..."
+        docker-compose up -d app-staging
+        echo "Deployment to staging completed."
+
+    - name: Verify staging deployment
+      run: |
+        echo "Verifying staging deployment..."
+        sleep 5
+        curl -s http://localhost:8080 | grep -q "conduit" && echo "✅ Staging verification successful" || (echo "❌ Staging verification failed" && exit 1)
+
+  deploy-production:
+    needs: deploy-staging
+    runs-on: self-hosted
+    environment: production
+
+    steps:
+    - name: Checkout for production deployment
+      uses: actions/checkout@v3
+
+    - name: Blue/Green Deployment
+      run: |
+        echo "Executing Blue/Green deployment..."
+        ./scripts/deploy-blue-green.sh
